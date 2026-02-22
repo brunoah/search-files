@@ -211,7 +211,7 @@ Endpoints :
 Développeur de systèmes IA\
 Créateur de FRANK Assistant
 
-GitHub : https://github.com/brunoah/search-files
+Linkedin : https://www.linkedin.com/in/bruno-ahée-a8451a313/
 
 ------------------------------------------------------------------------
 
