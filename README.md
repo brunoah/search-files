@@ -1,31 +1,70 @@
-# 📁 search-files
+# 🔎 search-files
 
-> Assistant IA local de recherche de fichiers utilisant LM Studio\
-> Indexation persistante, recherche rapide et compréhension en langage
-> naturel.
+> Assistant IA local de recherche de fichiers\
+> Indexation persistante, recherche FTS5, tri intelligent et API locale.
 
 ------------------------------------------------------------------------
 
 ## 🚀 Présentation
 
 **search-files** est un moteur de recherche de fichiers local développé
-en Python.
-
-Il combine :
+en Python, combinant :
 
 -   ⚡ Indexation persistante via SQLite
--   🔎 Recherche rapide et optimisée
--   🤖 Analyse des requêtes en langage naturel via LM Studio
--   🧠 Transformation intelligente des demandes en requêtes structurées
--   🗂 Indexation ciblée (Documents, Téléchargements, Bureau)
+-   🔎 Recherche ultra-rapide avec FTS5
+-   🤖 Interprétation en langage naturel via LM Studio
+-   🧠 Tri intelligent (pertinence, date, taille, hybride)
+-   🔄 Indexation incrémentale
+-   🌐 API locale FastAPI
 
-Contrairement à la recherche Windows classique, ce projet permet des
-requêtes naturelles comme :
+Le projet est conçu comme une brique d'infrastructure pour assistants IA
+locaux (ex : intégration future avec FRANK).
 
-    montre moi les pdf récents
-    pdf contenant facture
-    documents frank
-    plus gros fichiers de ce mois
+------------------------------------------------------------------------
+
+## 🧠 Fonctionnalités V2
+
+### 🔹 Indexation intelligente
+
+-   Scan des dossiers utilisateur :
+    -   Documents
+    -   Téléchargements
+    -   Bureau
+-   Stockage des métadonnées :
+    -   Chemin complet
+    -   Nom
+    -   Extension
+    -   Taille
+    -   Date de modification
+-   Mise à jour incrémentale
+
+### 🔹 Recherche avancée
+
+-   Recherche FTS5 (`MATCH`)
+-   Support AND / OR / phrase exacte
+-   Classement par pertinence (BM25)
+-   Tri par :
+    -   Pertinence
+    -   Date (asc/desc)
+    -   Taille (asc/desc)
+    -   Nom
+    -   Hybride (pertinence + récence)
+
+### 🔹 Analyse IA
+
+Requête utilisateur → LLM → JSON structuré :
+
+``` json
+{
+  "text": "facture pdf",
+  "ext": "pdf",
+  "limit": 20,
+  "sort": "hybrid",
+  "recent_days": 30
+}
+```
+
+Fallback automatique si le LLM ne renvoie pas un JSON valide.
 
 ------------------------------------------------------------------------
 
@@ -34,21 +73,25 @@ requêtes naturelles comme :
     search-files/
     │
     ├── index/
-    │   └── files.db                # Base SQLite persistante
+    │   └── files.db
     │
     ├── src/
     │   ├── core/
-    │   │   ├── paths.py            # Détection des dossiers utilisateur
-    │   │   ├── database.py         # Initialisation SQLite
-    │   │   ├── indexer.py          # Scan et indexation
-    │   │   └── search.py           # Exécution des requêtes
+    │   │   ├── database.py
+    │   │   ├── indexer.py
+    │   │   ├── search.py
+    │   │   ├── query.py
+    │   │   └── paths.py
     │   │
     │   ├── llm/
-    │   │   └── parser.py           # Langage naturel → JSON structuré
+    │   │   └── parser.py
     │   │
-    │   └── assistant.py            # Orchestration IA
+    │   ├── api/
+    │   │   └── app.py
+    │   │
+    │   └── assistant.py
     │
-    └── main.py                     # Interface CLI
+    └── main.py
 
 ------------------------------------------------------------------------
 
@@ -56,19 +99,19 @@ requêtes naturelles comme :
 
 -   Python 3.10+
 -   LM Studio
--   Un modèle LLM chargé (Mistral, Qwen, etc.)
+-   Modèle LLM chargé (Mistral, Qwen, etc.)
 -   Windows 10/11
 
 ------------------------------------------------------------------------
 
 ## 🔧 Installation
 
-### 1️⃣ Cloner le dépôt
+### 1️⃣ Cloner le projet
 
     git clone https://github.com/brunoah/search-files.git
     cd search-files
 
-### 2️⃣ Créer l'environnement virtuel
+### 2️⃣ Environnement virtuel
 
     python -m venv .venv
     .venv\Scripts\activate
@@ -77,113 +120,88 @@ requêtes naturelles comme :
 
     pip install -r requirements.txt
 
-Si nécessaire :
-
-    pip install openai python-dotenv
-
 ------------------------------------------------------------------------
 
 ## 🧠 Configuration LM Studio
 
-1.  Ouvrir LM Studio\
-2.  Activer :
-    -   ✅ OpenAI compatible API\
-    -   ✅ Start server on launch\
-3.  Charger un modèle (ex : mistral-7b-instruct)\
-4.  Vérifier :
+1.  Activer l'API OpenAI compatible\
+2.  Charger un modèle\
+3.  Vérifier :
 
 ```{=html}
 <!-- -->
 ```
     http://localhost:1234/v1/models
 
-------------------------------------------------------------------------
+Créer un fichier `.env` :
 
-## 🏗 Construire l'index
-
-Premier lancement :
-
-    python main.py
-
-Choisir :
-
-    1 - Construire l'index
-
-Les dossiers indexés :
-
--   Documents
--   Téléchargements
--   Bureau
-
-Base générée dans :
-
-    index/files.db
+    LMSTUDIO_BASE_URL=http://localhost:1234/v1
+    LMSTUDIO_API_KEY=lm-studio
+    LMSTUDIO_MODEL=nom-du-modele
 
 ------------------------------------------------------------------------
 
-## 🔎 Recherche
+## 🏗 Commandes
 
-Après indexation :
+### 🔹 Rebuild complet
 
-    python main.py
+    python main.py build
 
-Choisir :
+### 🔹 Update incrémental
 
-    2 - Recherche
+    python main.py update
+
+### 🔹 Recherche interactive
+
+    python main.py search
 
 Exemples :
 
-    pdf
-    pdf facture
-    documentation frank
-    x56 template
+    pdf récents
+    les plus gros fichiers
+    facture pdf ce mois
+    "X56 Template"
 
-------------------------------------------------------------------------
+### 🔹 Lancer l'API
 
-## 🧩 Fonctionnement
+    python main.py api --port 8005
 
-### Indexation
+Endpoints :
 
--   Scan des dossiers ciblés
--   Stockage des métadonnées :
-    -   Chemin
-    -   Nom
-    -   Extension
-    -   Taille
-    -   Date de modification
--   Persistance via SQLite
+-   `GET /health`
+-   `POST /search`
 
-### Analyse IA
-
-Requête utilisateur → LLM → JSON structuré :
-
-    {
-      "ext": "pdf",
-      "contains": "facture",
-      "limit": 20
-    }
-
-Puis traduction en requête SQL optimisée.
+``` json
+{ "q": "pdf facture récents" }
+```
 
 ------------------------------------------------------------------------
 
 ## 🔐 Confidentialité
 
--   Exécution 100% locale
--   Aucun fichier envoyé sur Internet
+-   100% local
+-   Aucun upload de fichier
 -   Aucun appel API externe
--   LLM exécuté localement via LM Studio
+-   LLM exécuté localement
+
+------------------------------------------------------------------------
+
+## 📊 Performance
+
+-   Indexation initiale : dépend du volume
+-   Update : rapide et ciblé
+-   Recherche : quasi instantanée
+-   Optimisations SQLite activées (WAL + index)
 
 ------------------------------------------------------------------------
 
 ## 🛠 Roadmap
 
--   [ ] Recherche FTS5 avancée
--   [ ] Indexation incrémentale
--   [ ] API locale FastAPI
--   [ ] Recherche sémantique par embeddings
+-   [ ] Scoring hybride avancé
+-   [ ] Recherche sémantique (embeddings locaux)
+-   [ ] Filtrage par dossier intelligent
 -   [ ] Interface graphique
--   [ ] Intégration avec FRANK
+-   [ ] Intégration complète FRANK
 
 ------------------------------------------------------------------------
 
@@ -199,4 +217,4 @@ GitHub : https://github.com/brunoah/search-files
 
 ## 📄 Licence
 
-MIT (recommandée)
+MIT
